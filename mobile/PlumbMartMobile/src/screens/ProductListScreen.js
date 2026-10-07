@@ -27,7 +27,7 @@ function ProductListScreen({ route, navigation }) {
       const allProducts = response.data.data || [];
 
       const filteredProducts = allProducts.filter(
-        product => product.categoryId === categoryId,
+        product => Number(product.categoryId) === Number(categoryId),
       );
 
       setProducts(filteredProducts);
@@ -50,34 +50,61 @@ function ProductListScreen({ route, navigation }) {
   const renderProduct = ({ item }) => {
     return (
       <Pressable
-        style={styles.card}
+        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
         onPress={() =>
           navigation.navigate('ProductDetails', {
             productId: item.id,
           })
         }
+        android_ripple={{ color: '#dbeafe' }}
       >
-        <Text style={styles.productName}>{item.name}</Text>
+        <View style={styles.productIcon}>
+          <Text style={styles.productIconText}>P</Text>
+        </View>
 
-        <Text style={styles.description}>{item.description}</Text>
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={2}>
+            {item.name}
+          </Text>
 
-        <Text style={styles.price}>₹{item.price}</Text>
+          <Text style={styles.description} numberOfLines={2}>
+            {item.description || 'Quality plumbing product'}
+          </Text>
+
+          <Text style={styles.price}>₹{item.price}</Text>
+        </View>
+
+        <Text style={styles.arrow}>›</Text>
       </Pressable>
     );
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{categoryName}</Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>{categoryName}</Text>
+
+          <Text style={styles.subtitle}>Browse available products</Text>
+        </View>
+
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>{products.length}</Text>
+        </View>
+      </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text style={styles.loadingText}>Loading products...</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
           <Text style={styles.error}>{error}</Text>
+
+          <Pressable style={styles.retryButton} onPress={fetchProducts}>
+            <Text style={styles.retryText}>Try Again</Text>
+          </Pressable>
         </View>
       ) : products.length === 0 ? (
         <View style={styles.center}>
@@ -104,11 +131,39 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 25,
+    fontWeight: '800',
     color: '#111827',
-    marginBottom: 16,
+  },
+
+  subtitle: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 4,
+  },
+
+  countBadge: {
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+    backgroundColor: '#dbeafe',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  countText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#2563eb',
   },
 
   list: {
@@ -117,36 +172,71 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  cardPressed: {
+    opacity: 0.75,
+  },
+
+  productIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 13,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 13,
+  },
+
+  productIconText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#2563eb',
+  },
+
+  productInfo: {
+    flex: 1,
   },
 
   productName: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: 5,
   },
 
   description: {
-    fontSize: 14,
+    fontSize: 13,
+    lineHeight: 18,
     color: '#6b7280',
-    marginBottom: 12,
+    marginBottom: 7,
   },
 
   price: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: '#2563eb',
+  },
+
+  arrow: {
+    fontSize: 30,
+    color: '#9ca3af',
+    fontWeight: '300',
+    marginLeft: 8,
   },
 
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
 
   loadingText: {
@@ -158,6 +248,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#dc2626',
     textAlign: 'center',
+    marginBottom: 16,
+  },
+
+  retryButton: {
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  retryText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
 
   empty: {

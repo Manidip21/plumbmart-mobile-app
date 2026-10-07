@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -37,19 +38,31 @@ function CategoriesScreen({ navigation }) {
     fetchCategories();
   }, []);
 
+  const handleCategoryPress = category => {
+    navigation.getParent()?.navigate('ProductList', {
+      categoryId: category.id,
+      categoryName: category.name,
+    });
+  };
+
   const renderCategory = ({ item }) => {
     return (
-      <View
-        style={styles.card}
-       onTouchEnd={() =>
-  navigation.getParent()?.navigate('ProductList', {
-    categoryId: item.id,
-    categoryName: item.name,
-  })
-}
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+        onPress={() => handleCategoryPress(item)}
+        android_ripple={{ color: '#dbeafe' }}
       >
-        <Text style={styles.name}>{item.name}</Text>
-      </View>
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>P</Text>
+        </View>
+
+        <View style={styles.categoryInfo}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.subText}>Browse products</Text>
+        </View>
+
+        <Text style={styles.arrow}>›</Text>
+      </Pressable>
     );
   };
 
@@ -57,14 +70,20 @@ function CategoriesScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Shop by Category</Text>
 
+      <Text style={styles.subtitle}>Find the plumbing products you need</Text>
+
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text style={styles.loadingText}>Loading categories...</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
           <Text style={styles.error}>{error}</Text>
+
+          <Pressable style={styles.retryButton} onPress={fetchCategories}>
+            <Text style={styles.retryText}>Try Again</Text>
+          </Pressable>
         </View>
       ) : categories.length === 0 ? (
         <View style={styles.center}>
@@ -92,10 +111,16 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 25,
+    fontWeight: '800',
     color: '#111827',
-    marginBottom: 16,
+  },
+
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 5,
+    marginBottom: 20,
   },
 
   list: {
@@ -104,23 +129,63 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  cardPressed: {
+    opacity: 0.75,
+  },
+
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+
+  iconText: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: '#2563eb',
+  },
+
+  categoryInfo: {
+    flex: 1,
   },
 
   name: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#111827',
+  },
+
+  subText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 4,
+  },
+
+  arrow: {
+    fontSize: 30,
+    color: '#9ca3af',
+    fontWeight: '300',
+    marginLeft: 8,
   },
 
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
 
   loadingText: {
@@ -132,6 +197,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#dc2626',
     textAlign: 'center',
+    marginBottom: 16,
+  },
+
+  retryButton: {
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  retryText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
 
   empty: {
