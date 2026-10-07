@@ -11,6 +11,7 @@ const checkout = async (req, res) => {
 
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { paymentMethod = "DIRECT_PAYMENT" } = req.body;
 
     // 1. Get user's cart
@@ -40,20 +41,72 @@ const checkout = async (req, res) => {
       });
     }
 
-    // 3. Validate payment method
-    const allowedPaymentMethods = [
-      "DIRECT_PAYMENT",
-      "UPFRONT",
-      "CREDIT_30",
-      "CREDIT_90",
-    ];
+    // 3. Validate payment method based on user role
+    if (userRole === "CUSTOMER") {
+      if (paymentMethod !== "DIRECT_PAYMENT") {
+        await transaction.rollback();
 
-    if (!allowedPaymentMethods.includes(paymentMethod)) {
+        return res.status(403).json({
+          success: false,
+          message: "Customers can only use direct payment",
+        });
+      }
+    } else if (userRole === "DEALER") {
+      if (
+        paymentMethod !== "UPFRONT" &&
+        paymentMethod !== "CREDIT_30" &&
+        paymentMethod !== "CREDIT_90"
+      ) {
+        await transaction.rollback();
+
+        return res.status(403).json({
+          success: false,
+          message: "Invalid payment method for dealer",
+        });
+      }
+
+      // Get dealer credit eligibility
+      const User = require("../models/User");
+
+      const dealer = await User.findByPk(userId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
+      if (!dealer) {
+        await transaction.rollback();
+
+        return res.status(404).json({
+          success: false,
+          message: "Dealer account not found",
+        });
+      }
+
+      // Check 30-day credit eligibility
+      if (paymentMethod === "CREDIT_30" && !dealer.credit30Eligible) {
+        await transaction.rollback();
+
+        return res.status(403).json({
+          success: false,
+          message: "30-day credit is not approved for this dealer",
+        });
+      }
+
+      // Check 90-day credit eligibility
+      if (paymentMethod === "CREDIT_90" && !dealer.credit90Eligible) {
+        await transaction.rollback();
+
+        return res.status(403).json({
+          success: false,
+          message: "90-day credit is not approved for this dealer",
+        });
+      }
+    } else {
       await transaction.rollback();
 
-      return res.status(400).json({
+      return res.status(403).json({
         success: false,
-        message: "Invalid payment method",
+        message: "This user role cannot place orders",
       });
     }
 
@@ -120,7 +173,6 @@ const checkout = async (req, res) => {
         { transaction },
       );
 
-      // Reduce stock only after the order is successfully created
       await product.update(
         {
           stock: product.stock - item.quantity,

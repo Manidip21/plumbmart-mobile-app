@@ -32,6 +32,16 @@ const User = sequelize.define(
       defaultValue: false,
     },
 
+    credit30Eligible: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+
+    credit90Eligible: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

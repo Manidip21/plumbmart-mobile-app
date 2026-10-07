@@ -91,6 +91,7 @@ const verifyOtp = async (req, res) => {
       where: { mobile },
     });
 
+    // New mobile numbers are registered as customers.
     if (!user) {
       user = await User.create({
         mobile,
@@ -98,8 +99,22 @@ const verifyOtp = async (req, res) => {
         isVerified: true,
       });
     } else {
-      user.isVerified = true;
-      await user.save();
+      // Dealers and plumbers must already be verified.
+      if (
+        (user.role === "DEALER" || user.role === "PLUMBER") &&
+        !user.isVerified
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Your account is not verified yet",
+        });
+      }
+
+      // Customers can verify through OTP.
+      if (user.role === "CUSTOMER") {
+        user.isVerified = true;
+        await user.save();
+      }
     }
 
     const token = generateToken(user);
@@ -113,6 +128,8 @@ const verifyOtp = async (req, res) => {
         name: user.name,
         mobile: user.mobile,
         role: user.role,
+        credit30Eligible: user.credit30Eligible,
+        credit90Eligible: user.credit90Eligible,
       },
     });
   } catch (error) {
